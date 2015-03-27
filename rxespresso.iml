@@ -86,18 +86,21 @@
     </content>
     <orderEntry type="jdk" jdkName="Android API 22 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="espresso-idling-resource-2.0" level="project" />
-    <orderEntry type="library" exported="" name="espresso-core-2.0" level="project" />
-    <orderEntry type="library" exported="" name="hamcrest-library-1.1" level="project" />
+    <orderEntry type="library" exported="" name="espresso-contrib-2.0" level="project" />
     <orderEntry type="library" exported="" name="rxjava-1.0.8" level="project" />
-    <orderEntry type="library" exported="" name="jsr305-2.0.1" level="project" />
-    <orderEntry type="library" exported="" name="javax.inject-1" level="project" />
+    <orderEntry type="library" exported="" name="support-v4-21.0.3" level="project" />
     <orderEntry type="library" exported="" name="testing-support-lib-0.1" level="project" />
+    <orderEntry type="library" exported="" name="recyclerview-v7-21.0.3" level="project" />
     <orderEntry type="library" exported="" name="javawriter-2.1.1" level="project" />
     <orderEntry type="library" exported="" name="javax.annotation-api-1.2" level="project" />
     <orderEntry type="library" exported="" name="hamcrest-core-1.1" level="project" />
-    <orderEntry type="library" exported="" name="junit-dep-4.10" level="project" />
+    <orderEntry type="library" exported="" name="espresso-idling-resource-2.0" level="project" />
+    <orderEntry type="library" exported="" name="hamcrest-library-1.1" level="project" />
+    <orderEntry type="library" exported="" name="espresso-core-2.0" level="project" />
+    <orderEntry type="library" exported="" name="jsr305-2.0.1" level="project" />
+    <orderEntry type="library" exported="" name="javax.inject-1" level="project" />
     <orderEntry type="library" exported="" name="hamcrest-integration-1.1" level="project" />
+    <orderEntry type="library" exported="" name="junit-dep-4.10" level="project" />
   </component>
 </module>
 

@@ -15,7 +15,6 @@
 package com.rosshambrick.rxespresso;
 
 import android.os.Bundle;
-import android.support.test.espresso.Espresso;
 import android.support.test.runner.AndroidJUnitRunner;
 
 import rx.plugins.RxJavaPlugins;
@@ -30,15 +29,14 @@ import rx.plugins.RxJavaPlugins;
  *
  *   defaultConfig {
  *       ...
- *       testInstrumentationRunner "rx.android.RxAndroidJUnitRunner"
+ *       testInstrumentationRunner "com.rosshambrick.rxespresso.RxAndroidJUnitRunner"
  *   }
  */
-public class RxAndroidJUnitRunner extends AndroidJUnitRunner {
+public final class RxAndroidJUnitRunner extends AndroidJUnitRunner {
     @Override
     public void onCreate(Bundle arguments) {
-        RxIdlingResource rxIdlingResource = new RxIdlingResource();
-        RxJavaPlugins.getInstance().registerObservableExecutionHook(rxIdlingResource);
-        Espresso.registerIdlingResources(rxIdlingResource);
+        RxJavaPlugins.getInstance().registerObservableExecutionHook(RxIdlingResource.get());
+
         super.onCreate(arguments);
     }
 }

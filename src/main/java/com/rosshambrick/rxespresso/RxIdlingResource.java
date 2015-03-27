@@ -1,32 +1,57 @@
+/**
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.rosshambrick.rxespresso;
 
-import android.os.Handler;
-import android.os.Looper;
+import android.support.test.espresso.Espresso;
 import android.support.test.espresso.IdlingResource;
 import android.util.Log;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import rx.Observable;
-import rx.Subscription;
+import rx.Subscriber;
 import rx.plugins.RxJavaObservableExecutionHook;
+
+import static com.rosshambrick.rxespresso.LogLevel.*;
+import static com.rosshambrick.rxespresso.RxEspresso.*;
+
+/**
+ * Provides the hooks for both RxJava and Espresso so that Espresso knows when to wait
+ * until RxJava subscriptions have completed.
+ */
 
 public class RxIdlingResource extends RxJavaObservableExecutionHook implements IdlingResource {
     public static final String TAG = "RxIdlingResource";
+
     private static final AtomicInteger subscriptions = new AtomicInteger(0);
-    private static boolean LOGGING = false;
+
+    private static RxIdlingResource INSTANCE;
 
     private ResourceCallback resourceCallback;
-    private final Handler mainHandler;
 
-    public RxIdlingResource() {
-        Looper mainLooper = Looper.getMainLooper();
-        mainHandler = new Handler(mainLooper);
+    public static RxIdlingResource get() {
+        if (INSTANCE == null) {
+            INSTANCE = new RxIdlingResource();
+            Espresso.registerIdlingResources(INSTANCE);
+        }
+        return INSTANCE;
     }
 
-    public static void enableLogging(boolean enable) {
-        LOGGING = enable;
-    }
+    /* ======================== */
+    /* IdlingResource Overrides */
+    /* ======================== */
 
     @Override
     public String getName() {
@@ -35,52 +60,69 @@ public class RxIdlingResource extends RxJavaObservableExecutionHook implements I
 
     @Override
     public boolean isIdleNow() {
-        int currentSubscriptionCount = subscriptions.get();
-        if (LOGGING) Log.d(TAG, "currentSubscriptionCount: " + currentSubscriptionCount);
-        boolean isIdle = currentSubscriptionCount <= 0;
-        Log.d(TAG, "isIdleNow: " + isIdle);
+        int activeSubscriptionCount = subscriptions.get();
+        boolean isIdle = activeSubscriptionCount == 0;
+
+        if (LOG_LEVEL.atOrAbove(DEBUG)) {
+            Log.d(TAG, "activeSubscriptionCount: " + activeSubscriptionCount);
+            Log.d(TAG, "isIdleNow: " + isIdle);
+        }
+
         return isIdle;
     }
 
     @Override
     public void registerIdleTransitionCallback(ResourceCallback resourceCallback) {
-        if (LOGGING) Log.d(TAG, "registerIdleTransitionCallback");
+        if (LOG_LEVEL.atOrAbove(DEBUG)) {
+            Log.d(TAG, "registerIdleTransitionCallback");
+        }
         this.resourceCallback = resourceCallback;
     }
 
+    /* ======================================= */
+    /* RxJavaObservableExecutionHook Overrides */
+    /* ======================================= */
+
     @Override
-    public <T> Observable.OnSubscribe<T> onSubscribeStart(Observable<? extends T> observableInstance, Observable.OnSubscribe<T> onSubscribe) {
-        int i = subscriptions.incrementAndGet();
-        if (LOGGING) Log.d(TAG, "onSubscribeStart: " + i);
+    public <T> Observable.OnSubscribe<T> onSubscribeStart(Observable<? extends T> observableInstance,
+                                                          final Observable.OnSubscribe<T> onSubscribe) {
+        int activeSubscriptionCount = subscriptions.incrementAndGet();
+        if (LOG_LEVEL.atOrAbove(DEBUG)) {
+            if (LOG_LEVEL.atOrAbove(VERBOSE)) {
+                Log.d(TAG, onSubscribe + " - onSubscribeStart: " + activeSubscriptionCount, new Throwable());
+            } else {
+                Log.d(TAG, onSubscribe + " - onSubscribeStart: " + activeSubscriptionCount);
+            }
+        }
+
+        onSubscribe.call(new Subscriber<T>() {
+            @Override
+            public void onCompleted() {
+                onFinally(onSubscribe, "onCompleted");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                onFinally(onSubscribe, "onError");
+            }
+
+            @Override
+            public void onNext(T t) {
+                //nothing
+            }
+        });
+
         return onSubscribe;
     }
 
-    @Override
-    public <T> Subscription onSubscribeReturn(Subscription subscription) {
-        if (LOGGING) Log.d(TAG, "onSubscribeReturn");
-        onFinalized();
-        return subscription;
-    }
-
-    @Override
-    public <T> Throwable onSubscribeError(Throwable e) {
-        if (LOGGING) Log.d(TAG, "onSubscribeError");
-        onFinalized();
-        return e;
-    }
-
-    private void onFinalized() {
-        int i = subscriptions.decrementAndGet();
-        if (LOGGING) Log.d(TAG, "onFinalized: " + i);
-
-        if (i == 0) {
-            //postDelayed needed to prevent race conditions
-            mainHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    resourceCallback.onTransitionToIdle();
-                }
-            }, 100);
+    private <T> void onFinally(Observable.OnSubscribe<T> onSubscribe, final String finalizeCaller) {
+        int activeSubscriptionCount = subscriptions.decrementAndGet();
+        if (LOG_LEVEL.atOrAbove(DEBUG)) {
+            Log.d(TAG, onSubscribe + " - " + finalizeCaller + ": " + activeSubscriptionCount);
+        }
+        if (activeSubscriptionCount == 0) {
+            Log.d(TAG, "onTransitionToIdle");
+            resourceCallback.onTransitionToIdle();
         }
     }
 }

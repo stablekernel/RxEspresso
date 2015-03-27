@@ -20,6 +20,9 @@ android {
 
 dependencies {
     compile 'com.android.support.test.espresso:espresso-core:2.0'
+    compile ('com.android.support.test.espresso:espresso-contrib:2.0') {
+        exclude module: 'support-annotations'
+    }
     compile 'com.android.support.test:testing-support-lib:0.1'
     provided 'io.reactivex:rxjava:1.0.8'
 }
