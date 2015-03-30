@@ -18,9 +18,7 @@ package com.rosshambrick.rxespresso;
  * Facade to simplify the configuration of RxEspresso
  */
 
-public class RxEspresso {
-    static LogLevel LOG_LEVEL = LogLevel.NONE;
-
+public final class RxEspresso {
     /***
      * Enable logging to troubleshoot the RxIdlingResource tracking.
      *
@@ -31,6 +29,6 @@ public class RxEspresso {
      * @param logLevel
      */
     public static void setLogLevel(LogLevel logLevel) {
-        LOG_LEVEL = logLevel;
+        RxIdlingResource.LOG_LEVEL = logLevel;
     }
 }

@@ -25,21 +25,27 @@ import rx.Subscriber;
 import rx.plugins.RxJavaObservableExecutionHook;
 
 import static com.rosshambrick.rxespresso.LogLevel.*;
-import static com.rosshambrick.rxespresso.RxEspresso.*;
+
 
 /**
  * Provides the hooks for both RxJava and Espresso so that Espresso knows when to wait
  * until RxJava subscriptions have completed.
  */
 
-public class RxIdlingResource extends RxJavaObservableExecutionHook implements IdlingResource {
+public final class RxIdlingResource extends RxJavaObservableExecutionHook implements IdlingResource {
     public static final String TAG = "RxIdlingResource";
 
-    private static final AtomicInteger subscriptions = new AtomicInteger(0);
+    static LogLevel LOG_LEVEL = NONE;
+
+    private final AtomicInteger subscriptions = new AtomicInteger(0);
 
     private static RxIdlingResource INSTANCE;
 
     private ResourceCallback resourceCallback;
+
+    private RxIdlingResource() {
+        //private
+    }
 
     public static RxIdlingResource get() {
         if (INSTANCE == null) {

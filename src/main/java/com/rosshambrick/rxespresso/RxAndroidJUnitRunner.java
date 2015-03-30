@@ -32,7 +32,7 @@ import rx.plugins.RxJavaPlugins;
  *       testInstrumentationRunner "com.rosshambrick.rxespresso.RxAndroidJUnitRunner"
  *   }
  */
-public final class RxAndroidJUnitRunner extends AndroidJUnitRunner {
+public class RxAndroidJUnitRunner extends AndroidJUnitRunner {
     @Override
     public void onCreate(Bundle arguments) {
         RxJavaPlugins.getInstance().registerObservableExecutionHook(RxIdlingResource.get());
