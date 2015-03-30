@@ -24,7 +24,7 @@ TODO
 ```java
     dependencies {
         ...
-        androidTestCompile project(':rxespresso')
+        androidTestCompile project(':RxEspresso')
     }
 ```
 

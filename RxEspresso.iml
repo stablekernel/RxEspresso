@@ -3,7 +3,7 @@
   <component name="FacetManager">
     <facet type="android-gradle" name="Android-Gradle">
       <configuration>
-        <option name="GRADLE_PROJECT_PATH" value=":rxespresso" />
+        <option name="GRADLE_PROJECT_PATH" value=":RxEspresso" />
       </configuration>
     </facet>
     <facet type="android" name="Android">
@@ -99,8 +99,8 @@
     <orderEntry type="library" exported="" name="espresso-core-2.0" level="project" />
     <orderEntry type="library" exported="" name="jsr305-2.0.1" level="project" />
     <orderEntry type="library" exported="" name="javax.inject-1" level="project" />
-    <orderEntry type="library" exported="" name="hamcrest-integration-1.1" level="project" />
     <orderEntry type="library" exported="" name="junit-dep-4.10" level="project" />
+    <orderEntry type="library" exported="" name="hamcrest-integration-1.1" level="project" />
   </component>
 </module>
 
