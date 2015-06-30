@@ -30,12 +30,11 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support.test.espresso:espresso-core:2.0'
-    compile ('com.android.support.test.espresso:espresso-contrib:2.0') {
+    compile 'com.android.support.test:runner:0.3'
+    compile 'com.android.support.test.espresso:espresso-core:2.2'
+    compile ('com.android.support.test.espresso:espresso-contrib:2.2') {
         exclude module: 'support-annotations'
-        exclude group: 'com.android.support', module: 'support-v4'
-        exclude group: 'com.android.support', module: 'recyclerview-v7'
+        exclude module: 'support-v4'
     }
-    compile 'com.android.support.test:testing-support-lib:0.1'
     provided 'io.reactivex:rxjava:1.0.8'
 }
