@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package com.rosshambrick.rxespresso;
+package com.stablekernel.rxespresso;
 
 import android.os.Bundle;
 import android.support.test.runner.AndroidJUnitRunner;
@@ -29,7 +29,7 @@ import rx.plugins.RxJavaPlugins;
  *
  *   defaultConfig {
  *       ...
- *       testInstrumentationRunner "com.rosshambrick.rxespresso.RxAndroidJUnitRunner"
+ *       testInstrumentationRunner "com.stablekernel.rxespresso.RxAndroidJUnitRunner"
  *   }
  */
 public class RxAndroidJUnitRunner extends AndroidJUnitRunner {

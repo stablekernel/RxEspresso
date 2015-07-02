@@ -7,7 +7,7 @@ Just set the `testInstrumentationRunner` to `RxAndroidJUnitRunner` in your app m
 ```java
     defaultConfig {
         ...
-        testInstrumentationRunner "com.rosshambrick.rxespresso.RxAndroidJUnitRunner"
+        testInstrumentationRunner "com.stablekernel.rxespresso.RxAndroidJUnitRunner"
     }
 ```
 

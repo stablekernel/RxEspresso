@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package com.rosshambrick.rxespresso;
+package com.stablekernel.rxespresso;
 
 /**
  * Facade to simplify the configuration of RxEspresso
@@ -28,7 +28,7 @@ public final class RxEspresso {
      *
      * @param logLevel
      */
-    public static void setLogLevel(LogLevel logLevel) {
+    public static void setLogLevel(@LogLevel int logLevel) {
         RxIdlingResource.LOG_LEVEL = logLevel;
     }
 }
