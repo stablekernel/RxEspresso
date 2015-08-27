@@ -102,24 +102,29 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
             }
         }
 
-        onSubscribe.call(new Subscriber<T>() {
+        return new Observable.OnSubscribe<T>() {
             @Override
-            public void onCompleted() {
-                onFinally(onSubscribe, "onCompleted");
-            }
+            public void call(Subscriber<? super T> subscriber) {
+                onSubscribe.call(new Subscriber<T>() {
+                    @Override
+                    public void onCompleted() {
+                        subscriber.onCompleted();
+                        onFinally(onSubscribe, "onCompleted");
+                    }
 
-            @Override
-            public void onError(Throwable e) {
-                onFinally(onSubscribe, "onError");
-            }
+                    @Override
+                    public void onError(Throwable e) {
+                        subscriber.onError(e);
+                        onFinally(onSubscribe, "onError");
+                    }
 
-            @Override
-            public void onNext(T t) {
-                //nothing
+                    @Override
+                    public void onNext(T t) {
+                        subscriber.onNext(t);
+                    }
+                });
             }
-        });
-
-        return onSubscribe;
+        };
     }
 
     private <T> void onFinally(Observable.OnSubscribe<T> onSubscribe, final String finalizeCaller) {
