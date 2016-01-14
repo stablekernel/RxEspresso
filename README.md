@@ -1,6 +1,3 @@
-###NOTE: This repo has moved and is being maintained at https://github.com/stablekernel/RxEspresso
-===
-
 # RxEspresso
 Filling the gap between RxJava and Espresso
 
