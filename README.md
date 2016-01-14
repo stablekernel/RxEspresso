@@ -10,7 +10,7 @@ Just set the `testInstrumentationRunner` to `RxAndroidJUnitRunner` in your app m
 ```java
     defaultConfig {
         ...
-        testInstrumentationRunner "com.rosshambrick.rxespresso.RxAndroidJUnitRunner"
+        testInstrumentationRunner "com.stablekernel.rxespresso.RxAndroidJUnitRunner"
     }
 ```
 
@@ -20,7 +20,7 @@ TODO
 ## Include source as library module
 1. From project root in terminal run:
 
-  `git submodule add https://github.com/rosshambrick/RxEspresso.git`
+  `git submodule add git@github.com:stablekernel/RxEspresso.git`
 
 2. Add dependency to this library module in your app module's build.gradle file:
 

@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package com.rosshambrick.rxespresso;
+package com.stablekernel.rxespresso;
 
 import android.support.test.espresso.Espresso;
 import android.support.test.espresso.IdlingResource;
@@ -24,7 +24,8 @@ import rx.Observable;
 import rx.Subscriber;
 import rx.plugins.RxJavaObservableExecutionHook;
 
-import static com.rosshambrick.rxespresso.LogLevel.*;
+import static com.stablekernel.rxespresso.LogLevel.DEBUG;
+import static com.stablekernel.rxespresso.LogLevel.VERBOSE;
 
 
 /**
@@ -35,7 +36,7 @@ import static com.rosshambrick.rxespresso.LogLevel.*;
 public final class RxIdlingResource extends RxJavaObservableExecutionHook implements IdlingResource {
     public static final String TAG = "RxIdlingResource";
 
-    static LogLevel LOG_LEVEL = NONE;
+    static int LOG_LEVEL = LogLevel.NONE;
 
     private final AtomicInteger subscriptions = new AtomicInteger(0);
 
@@ -69,7 +70,7 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
         int activeSubscriptionCount = subscriptions.get();
         boolean isIdle = activeSubscriptionCount == 0;
 
-        if (LOG_LEVEL.atOrAbove(DEBUG)) {
+        if (LOG_LEVEL >= DEBUG) {
             Log.d(TAG, "activeSubscriptionCount: " + activeSubscriptionCount);
             Log.d(TAG, "isIdleNow: " + isIdle);
         }
@@ -79,7 +80,7 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
 
     @Override
     public void registerIdleTransitionCallback(ResourceCallback resourceCallback) {
-        if (LOG_LEVEL.atOrAbove(DEBUG)) {
+        if (LOG_LEVEL >= DEBUG) {
             Log.d(TAG, "registerIdleTransitionCallback");
         }
         this.resourceCallback = resourceCallback;
@@ -93,37 +94,42 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
     public <T> Observable.OnSubscribe<T> onSubscribeStart(Observable<? extends T> observableInstance,
                                                           final Observable.OnSubscribe<T> onSubscribe) {
         int activeSubscriptionCount = subscriptions.incrementAndGet();
-        if (LOG_LEVEL.atOrAbove(DEBUG)) {
-            if (LOG_LEVEL.atOrAbove(VERBOSE)) {
+        if (LOG_LEVEL >= DEBUG) {
+            if (LOG_LEVEL >= VERBOSE) {
                 Log.d(TAG, onSubscribe + " - onSubscribeStart: " + activeSubscriptionCount, new Throwable());
             } else {
                 Log.d(TAG, onSubscribe + " - onSubscribeStart: " + activeSubscriptionCount);
             }
         }
 
-        onSubscribe.call(new Subscriber<T>() {
+        return new Observable.OnSubscribe<T>() {
             @Override
-            public void onCompleted() {
-                onFinally(onSubscribe, "onCompleted");
-            }
+            public void call(final Subscriber<? super T> subscriber) {
+                onSubscribe.call(new Subscriber<T>() {
+                    @Override
+                    public void onCompleted() {
+                        subscriber.onCompleted();
+                        onFinally(onSubscribe, "onCompleted");
+                    }
 
-            @Override
-            public void onError(Throwable e) {
-                onFinally(onSubscribe, "onError");
-            }
+                    @Override
+                    public void onError(Throwable e) {
+                        subscriber.onError(e);
+                        onFinally(onSubscribe, "onError");
+                    }
 
-            @Override
-            public void onNext(T t) {
-                //nothing
+                    @Override
+                    public void onNext(T t) {
+                        subscriber.onNext(t);
+                    }
+                });
             }
-        });
-
-        return onSubscribe;
+        };
     }
 
     private <T> void onFinally(Observable.OnSubscribe<T> onSubscribe, final String finalizeCaller) {
         int activeSubscriptionCount = subscriptions.decrementAndGet();
-        if (LOG_LEVEL.atOrAbove(DEBUG)) {
+        if (LOG_LEVEL >= DEBUG) {
             Log.d(TAG, onSubscribe + " - " + finalizeCaller + ": " + activeSubscriptionCount);
         }
         if (activeSubscriptionCount == 0) {
