@@ -104,7 +104,7 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
 
         return new Observable.OnSubscribe<T>() {
             @Override
-            public void call(Subscriber<? super T> subscriber) {
+            public void call(final Subscriber<? super T> subscriber) {
                 onSubscribe.call(new Subscriber<T>() {
                     @Override
                     public void onCompleted() {
