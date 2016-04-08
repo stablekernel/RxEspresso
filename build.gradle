@@ -22,7 +22,7 @@ android {
 
 dependencies {
     compile 'com.android.support:support-annotations:23.3.0'
-    compile 'com.android.support.test:runner:0.3'
+    compile 'com.android.support.test:runner:0.5'
     compile 'com.android.support.test.espresso:espresso-core:2.2'
     compile ('com.android.support.test.espresso:espresso-contrib:2.2') {
         exclude module: 'support-annotations'
