@@ -2,9 +2,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,6 +18,8 @@ import android.support.test.espresso.Espresso;
 import android.support.test.espresso.IdlingResource;
 import android.util.Log;
 
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import rx.Observable;
@@ -37,6 +39,9 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
     public static final String TAG = "RxIdlingResource";
 
     static int LOG_LEVEL = LogLevel.NONE;
+
+    // map of OnSubscribes and their initializing stack trace (available from Throwable)
+    private HashMap<WeakReference<Observable.OnSubscribe>, Throwable> onSubscribeList = new HashMap<>();
 
     private final AtomicInteger subscriptions = new AtomicInteger(0);
 
@@ -93,13 +98,12 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
     @Override
     public <T> Observable.OnSubscribe<T> onSubscribeStart(Observable<? extends T> observableInstance,
                                                           final Observable.OnSubscribe<T> onSubscribe) {
+
         int activeSubscriptionCount = subscriptions.incrementAndGet();
+        onSubscribeList.put(new WeakReference<Observable.OnSubscribe>(onSubscribe), new Throwable());
+
         if (LOG_LEVEL >= DEBUG) {
-            if (LOG_LEVEL >= VERBOSE) {
-                Log.d(TAG, onSubscribe + " - onSubscribeStart: " + activeSubscriptionCount, new Throwable());
-            } else {
-                Log.d(TAG, onSubscribe + " - onSubscribeStart: " + activeSubscriptionCount);
-            }
+            Log.d(TAG, "Subscription started. Active subscription count is now: " + activeSubscriptionCount);
         }
 
         return new Observable.OnSubscribe<T>() {
@@ -129,12 +133,37 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
 
     private <T> void onFinally(Observable.OnSubscribe<T> onSubscribe, final String finalizeCaller) {
         int activeSubscriptionCount = subscriptions.decrementAndGet();
+        removeOnSubscribe(onSubscribe);
+
         if (LOG_LEVEL >= DEBUG) {
-            Log.d(TAG, onSubscribe + " - " + finalizeCaller + ": " + activeSubscriptionCount);
+            Log.d(TAG, "Subscription finished because: " + finalizeCaller + ". Active subscription count is now: " + activeSubscriptionCount);
+
+            if (LOG_LEVEL >= VERBOSE) {
+                // remaining subscriptions:
+                Log.d(TAG, ">>>>>>> remaining subscriptions ");
+                printStackTraces();
+                Log.d(TAG, "<<<<<<<<");
+            }
         }
         if (activeSubscriptionCount == 0) {
             Log.d(TAG, "onTransitionToIdle");
             resourceCallback.onTransitionToIdle();
+        }
+    }
+
+    private void removeOnSubscribe(Observable.OnSubscribe reference) {
+        for (WeakReference<Observable.OnSubscribe> weakRef : onSubscribeList.keySet()) {
+            if (weakRef.get() == reference) {
+                onSubscribeList.remove(weakRef);
+                return;
+            }
+        }
+    }
+
+    private void printStackTraces() {
+        for (WeakReference<Observable.OnSubscribe> key : onSubscribeList.keySet()) {
+            Throwable throwable = onSubscribeList.get(key);
+            Log.d(TAG, key.get().toString(), throwable);
         }
     }
 }
