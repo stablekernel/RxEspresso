@@ -41,7 +41,7 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
     static int LOG_LEVEL = LogLevel.NONE;
 
     // map of OnSubscribes and their initializing stack trace (available from Throwable)
-    private HashMap<WeakReference<Observable.OnSubscribe>, Throwable> onSubscribeList = new HashMap<>();
+    private HashMap<WeakReference<Observable.OnSubscribe>, Info> onSubscribeList = new HashMap<>();
 
     private final AtomicInteger subscriptions = new AtomicInteger(0);
 
@@ -100,7 +100,10 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
                                                           final Observable.OnSubscribe<T> onSubscribe) {
 
         int activeSubscriptionCount = subscriptions.incrementAndGet();
-        onSubscribeList.put(new WeakReference<Observable.OnSubscribe>(onSubscribe), new Throwable());
+
+        String currentThreadName = Thread.currentThread().getName();
+        Info info = new Info(new Throwable(), currentThreadName);
+        onSubscribeList.put(new WeakReference<Observable.OnSubscribe>(onSubscribe), info);
 
         if (LOG_LEVEL >= DEBUG) {
             Log.d(TAG, "Subscription started. Active subscription count is now: " + activeSubscriptionCount);
@@ -162,8 +165,29 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
 
     private void printStackTraces() {
         for (WeakReference<Observable.OnSubscribe> key : onSubscribeList.keySet()) {
-            Throwable throwable = onSubscribeList.get(key);
-            Log.d(TAG, key.get().toString(), throwable);
+            Observable.OnSubscribe onSubscribe = key.get();
+            if (onSubscribe != null) {
+            Info info = onSubscribeList.get(key);
+                Log.d(TAG, onSubscribe.toString() + " on thread " + info.getThreadName(), info.getThrowable());
+            }
+        }
+    }
+
+    private class Info {
+        private Throwable throwable;
+        private String threadName;
+
+        public Info(Throwable throwable, String threadName) {
+            this.throwable = throwable;
+            this.threadName = threadName;
+        }
+
+        public Throwable getThrowable() {
+            return throwable;
+        }
+
+        public String getThreadName() {
+            return threadName;
         }
     }
 }
