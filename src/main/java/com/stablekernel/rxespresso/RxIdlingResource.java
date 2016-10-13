@@ -2,9 +2,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,6 @@ import rx.Subscriber;
 import rx.plugins.RxJavaObservableExecutionHook;
 
 import static com.stablekernel.rxespresso.LogLevel.DEBUG;
-import static com.stablekernel.rxespresso.LogLevel.VERBOSE;
 
 
 /**
@@ -65,6 +64,10 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
         return TAG;
     }
 
+    public void increment() {
+        subscriptions.incrementAndGet();
+    }
+
     @Override
     public boolean isIdleNow() {
         int activeSubscriptionCount = subscriptions.get();
@@ -93,14 +96,6 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
     @Override
     public <T> Observable.OnSubscribe<T> onSubscribeStart(Observable<? extends T> observableInstance,
                                                           final Observable.OnSubscribe<T> onSubscribe) {
-        int activeSubscriptionCount = subscriptions.incrementAndGet();
-        if (LOG_LEVEL >= DEBUG) {
-            if (LOG_LEVEL >= VERBOSE) {
-                Log.d(TAG, onSubscribe + " - onSubscribeStart: " + activeSubscriptionCount, new Throwable());
-            } else {
-                Log.d(TAG, onSubscribe + " - onSubscribeStart: " + activeSubscriptionCount);
-            }
-        }
 
         return new Observable.OnSubscribe<T>() {
             @Override
@@ -128,6 +123,13 @@ public final class RxIdlingResource extends RxJavaObservableExecutionHook implem
     }
 
     private <T> void onFinally(Observable.OnSubscribe<T> onSubscribe, final String finalizeCaller) {
+
+        // only decrement if on main thread
+        String currentThread = Thread.currentThread().getName();
+        if (!currentThread.equals("main")) {
+            return;
+        }
+
         int activeSubscriptionCount = subscriptions.decrementAndGet();
         if (LOG_LEVEL >= DEBUG) {
             Log.d(TAG, onSubscribe + " - " + finalizeCaller + ": " + activeSubscriptionCount);
