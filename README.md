@@ -1,46 +1,155 @@
 # RxEspresso
 Filling the gap between RxJava and Espresso
 
-## Bootstrapping
-Just set the `testInstrumentationRunner` to `RxAndroidJUnitRunner` in your app module's build.gradle file:
 
-```java
-    defaultConfig {
-        ...
-        testInstrumentationRunner "com.stablekernel.rxespresso.RxAndroidJUnitRunner"
-    }
-```
 
-## Include as gradle dependency
+## Setup
+
+#### Include as gradle dependency
 TODO
 
-## Include source as library module
+#### Include source as library module
 1. From project root in terminal run:
 
-  `git submodule add git@github.com:stablekernel/RxEspresso.git`
+	```
+git submodule add git@github.com:stablekernel/RxEspresso.git
+  ```
 
 2. Add dependency to this library module in your app module's build.gradle file:
 
-```java
-    dependencies {
-        ...
-        androidTestCompile project(':RxEspresso')
-    }
-```
+	```
+dependencies {
+    ...
+	androidTestCompile project(':RxEspresso')
+}
+	```
 
 ## Usage
-If you typically use "cold" Observables or short lived "hot" Observables, you shouldn't have to do anything special to make this work in your project.
 
-There *is* **one big exception**. All observables must complete before Espresso will continue.  (I'm still trying to figure out a solution to this).  Below are some of the common use cases that will cause problems:
+1. Set the globa log level:
 
-* You cannot use RxJava in an "event bus" style where you have an Observable that forever remains "hot" to serve up events to interested subscribers.  If you are using RxJava in this manner and want to use Espresso, you will need to migrate to another event bus option.  My preference is using [EventBus](https://github.com/greenrobot/EventBus)
-* You will also run into issues if you have Observables running outside the scope of the UI being tested, such as in an Android Service.  The specifics of your usage will determine the level of impact.  Possibly disabling the services when being tested by Espresso could solve the issue.
+	```
+RxEspresso.setLogLevel(LogLevel.DEBUG);
+```
 
-## Tips
-If you do have a situtation where the tests aren't running as expected due to a never-finishing Observable, you can:
+2. Increment and decrement the counter based on your design. The flexibility of this library means that you decide which Observable chains Espresso should wait for and which it should not. We chose to increment onSubscribe and decrement afterTerminate
 
-1. Enable logging by calling `RxEspresso.setLogLevel(LogLevel.DEBUG)` somewhere in your test setup, and filter you logcat based on the TAG: `RxIdlingResource`.  By looking at the Object reference IDs, you can identify any that have started but not completed.
+	```
+dataStore.getData()
+     .subscribeOn(Schedulers.computation())
+     .observeOn(AndroidSchedulers.mainThread())
+     .doOnSubscribe(() -> RxEspresso.increment())
+     .doAfterTerminate(() -> RxEspresso.decrement())
+     .subscribe(// on Next);
+```
 
-2. Once you've identified one that never completes, you can enable logging with stack traces to see where this Observer subscription originates from by calling `RxEspresso.setLogLevel(LogLevel.VERBOSE)`
+3. Monitor the idle state. This is optional but RxEspresso exposes an `isIdleNow` method to track idle state. This is helpful in ensuring that monitored Observables have completed before a new test begins. Since any open streams after one test will leave the app in an indeterminate state for the next test, we chose to check idle state between tests and fail the whole suite if not idle:
 
-Better support for identifying these blocking Observables will be added in a future version of RxEspresso. 
+	```
+	public class BaseTest {
+    	@After
+	    public void tearDown() throws Exception {
+        	// if there is anything still idling then future tests may fail
+	        boolean idleNow = RxEspresso.isIdleNow();
+    	    if (!idleNow) {
+        	    String msg = "Test is over but RxEspresso is not idle. " +
+            	        "Remaining tests may fail unexpectedly.";
+	            Log.e("TESTING", msg);
+    	        System.exit(-1);
+        	}
+	    }
+	}
+	```
+
+## Better Usage
+
+Since `doOnSubscribe` and `doAfterTerminate` are always used together, we use a follow [Dan Lew's pattern](http://blog.danlew.net/2015/03/02/dont-break-the-chain/) using a Transformer to better compose observable chains. We bundle 
+
+```
+public final class RxEspressoTransformer{
+
+    private final Observable.Transformer transformer;
+
+    public RxEspressoTransformer() {
+        transformer = observable -> ((Observable) observable)
+                .doOnSubscribe(() -> RxEspresso.increment())
+                .doAfterTerminate(() -> RxEspresso.decrement());
+    }
+
+    public <T> Observable.Transformer<T, T> applySchedulers() {
+        return (Observable.Transformer<T, T>) transformer;
+    }
+}	
+```
+
+and then apply our Transformer in code:
+
+
+```
+RxEspressoTransformer rxEspressoTransformer = new RxEspressoTransformer();
+
+dataStore.getData()
+     .subscribeOn(Schedulers.computation())
+     .observeOn(AndroidSchedulers.mainThread())
+     .compose(rxEspressoTransformer.applySchedulers())
+     .subscribe(// on Next);
+```
+
+However we are still leaking test code into production. Instead we define a `SchedulersInterface` and using dependency injection, supply *production* and *test* implementations. Only within the *test* implementation do we call into RxEspresso:
+
+
+```
+public interface SchedulersTransformer {
+    <T> Observable.Transformer<T, T> applySchedulers();
+}
+```
+
+```
+public final class ProductionSchedulersTransformer implements SchedulersTransformer {
+
+    private final Observable.Transformer schedulersTransformer;
+
+    public ProductionSchedulersTransformer() {
+        schedulersTransformer = observable -> ((Observable) observable)
+                .subscribeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    @Override
+    public <T> Observable.Transformer<T, T> applySchedulers() {
+        return (Observable.Transformer<T, T>) schedulersTransformer;
+    }
+}
+```
+
+```
+public final class RxEspressoTransformer implements SchedulersTransformer {
+
+    private final Observable.Transformer schedulersTransformer;
+
+    public RxEspressoTransformer() {
+        schedulersTransformer = observable -> ((Observable) observable)
+                .subscribeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe(() -> RxEspresso.increment())
+                .doAfterTerminate(() -> RxEspresso.decrement());
+    }
+
+    @Override
+    public <T> Observable.Transformer<T, T> applySchedulers() {
+        return (Observable.Transformer<T, T>) schedulersTransformer;
+    }
+}
+```
+
+Then in code we call our injected instance of `SchedulersTransformer`:
+
+```
+@Inject SchedulersTransformer schedulersTransformer;
+
+dataStore.getData()
+     .compose(schedulersTransformer.applySchedulers())
+     .subscribe(// on Next);
+```
+
+	
