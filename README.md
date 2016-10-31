@@ -26,7 +26,7 @@ dependencies {
 
 ## Usage
 
-1. Set the globa log level:
+1. Set the global log level:
 
 	```
 RxEspresso.setLogLevel(LogLevel.DEBUG);
@@ -63,7 +63,7 @@ dataStore.getData()
 
 ## Better Usage
 
-Since `doOnSubscribe` and `doAfterTerminate` are always used together, we use a follow [Dan Lew's pattern](http://blog.danlew.net/2015/03/02/dont-break-the-chain/) using a Transformer to better compose observable chains. We bundle 
+Since `doOnSubscribe` and `doAfterTerminate` are always used together, we follow [Dan Lew's pattern](http://blog.danlew.net/2015/03/02/dont-break-the-chain/) of using a Transformer to better compose observable chains. We bundle `doOnSubscribe` and `doAfterTerminate`:
 
 ```
 public final class RxEspressoTransformer{
@@ -76,7 +76,7 @@ public final class RxEspressoTransformer{
                 .doAfterTerminate(() -> RxEspresso.decrement());
     }
 
-    public <T> Observable.Transformer<T, T> applySchedulers() {
+    public <T> Observable.Transformer<T, T> apply() {
         return (Observable.Transformer<T, T>) transformer;
     }
 }	
@@ -91,39 +91,39 @@ RxEspressoTransformer rxEspressoTransformer = new RxEspressoTransformer();
 dataStore.getData()
      .subscribeOn(Schedulers.computation())
      .observeOn(AndroidSchedulers.mainThread())
-     .compose(rxEspressoTransformer.applySchedulers())
+     .compose(rxEspressoTransformer.apply())
      .subscribe(// on Next);
 ```
 
-However we are still leaking test code into production. Instead we define a `SchedulersInterface` and using dependency injection, supply *production* and *test* implementations. Only within the *test* implementation do we call into RxEspresso:
+However we are still leaking test code into production. Instead we define a `UiSchedulersTransformer` interface and using dependency injection, supply *production* and *test* implementations. Only within the *test* implementation do we call into RxEspresso:
 
 
 ```
-public interface SchedulersTransformer {
-    <T> Observable.Transformer<T, T> applySchedulers();
+public interface UiSchedulersTransformer {
+    <T> Observable.Transformer<T, T> apply();
 }
 ```
 
 ```
-public final class ProductionSchedulersTransformer implements SchedulersTransformer {
+public final class ProductionUiSchedulersTransformer implements UiSchedulersTransformer {
 
     private final Observable.Transformer schedulersTransformer;
 
-    public ProductionSchedulersTransformer() {
+    public ProductionUiSchedulersTransformer() {
         schedulersTransformer = observable -> ((Observable) observable)
                 .subscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
     @Override
-    public <T> Observable.Transformer<T, T> applySchedulers() {
+    public <T> Observable.Transformer<T, T> apply() {
         return (Observable.Transformer<T, T>) schedulersTransformer;
     }
 }
 ```
 
 ```
-public final class RxEspressoTransformer implements SchedulersTransformer {
+public final class TestingUiSchedulersTransformer implements UiSchedulersTransformer {
 
     private final Observable.Transformer schedulersTransformer;
 
@@ -136,19 +136,19 @@ public final class RxEspressoTransformer implements SchedulersTransformer {
     }
 
     @Override
-    public <T> Observable.Transformer<T, T> applySchedulers() {
+    public <T> Observable.Transformer<T, T> apply() {
         return (Observable.Transformer<T, T>) schedulersTransformer;
     }
 }
 ```
 
-Then in code we call our injected instance of `SchedulersTransformer`:
+Then in code we call our injected instance of `UiSchedulersTransformer`:
 
 ```
-@Inject SchedulersTransformer schedulersTransformer;
+@Inject UiSchedulersTransformer uiSchedulersTransformer;
 
 dataStore.getData()
-     .compose(schedulersTransformer.applySchedulers())
+     .compose(uiSchedulersTransformer.apply())
      .subscribe(// on Next);
 ```
 
