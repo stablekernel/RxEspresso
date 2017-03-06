@@ -1,8 +1,8 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
         minSdkVersion 10
@@ -25,11 +25,10 @@ android {
 }
 
 dependencies {
-
-    compile 'com.android.support:support-annotations:25.1.0'
+    compile "com.android.support:support-annotations:$rootProject.ext.androidSupportLibraryVersion"
     compile 'com.android.support.test.espresso:espresso-intents:2.2.2'
     compile 'com.android.support.test.espresso:espresso-core:2.2.2'
-    compile('com.android.support.test.espresso:espresso-contrib:2.2') {
+    compile('com.android.support.test.espresso:espresso-contrib:2.2.2') {
         exclude module: 'support-annotations'
         exclude module: 'support-v4'
     }
