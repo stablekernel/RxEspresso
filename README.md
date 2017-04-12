@@ -5,14 +5,13 @@ Filling the gap between RxJava and Espresso
 
 ## Setup
 
-#### Include as gradle dependency
-TODO
 
 #### Include source as library module
+
 1. From project root in terminal run:
 
 	```
-git submodule add git@github.com:stablekernel/RxEspresso.git
+$ git submodule add git@github.com:stablekernel/RxEspresso.git
   ```
 
 2. Add dependency to this library module in your app module's build.gradle file:
