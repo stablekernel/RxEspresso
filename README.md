@@ -28,36 +28,36 @@ Filling the gap between RxJava and Espresso
 1. Set the global log level:
 
     ```java
-RxEspresso.setLogLevel(LogLevel.DEBUG);
+    RxEspresso.setLogLevel(LogLevel.DEBUG);
     ```
 
 2. Increment and decrement the counter based on your design. The flexibility of this library means that you decide which Observable chains Espresso should wait for and which it should not. We chose to increment onSubscribe and decrement afterTerminate
 
     ```java
-dataStore.getData()
-     .subscribeOn(Schedulers.computation())
-     .observeOn(AndroidSchedulers.mainThread())
-     .doOnSubscribe(() -> RxEspresso.increment())
-     .doAfterTerminate(() -> RxEspresso.decrement())
-     .subscribe(// on Next);
+    dataStore.getData()
+         .subscribeOn(Schedulers.computation())
+         .observeOn(AndroidSchedulers.mainThread())
+         .doOnSubscribe(() -> RxEspresso.increment())
+         .doAfterTerminate(() -> RxEspresso.decrement())
+         .subscribe(// on Next);
     ```
 
 3. Monitor the idle state. This is optional but RxEspresso exposes an `isIdleNow` method to track idle state. This is helpful in ensuring that monitored Observables have completed before a new test begins. Since any open streams after one test will leave the app in an indeterminate state for the next test, we chose to check idle state between tests and fail the whole suite if not idle:
 
     ```java
-public class BaseTest {
-    @After
-	public void tearDown() throws Exception {
-        // if there is anything still idling then future tests may fail
-	    boolean idleNow = RxEspresso.isIdleNow();
-    	if (!idleNow) {
-			String msg = "Test is over but RxEspresso is not idle. " +
+    public class BaseTest {
+        @After
+   	    public void tearDown() throws Exception {
+            // if there is anything still idling then future tests may fail
+	        boolean idleNow = RxEspresso.isIdleNow();
+    	    if (!idleNow) {
+			    String msg = "Test is over but RxEspresso is not idle. " +
             	        "Remaining tests may fail unexpectedly.";
-	        Log.e("TESTING", msg);
-    	    System.exit(-1);
-        }
-   	}
-}
+	            Log.e("TESTING", msg);
+    	        System.exit(-1);
+            }
+   	    }
+    }
     ```
 
 ## Better Usage
