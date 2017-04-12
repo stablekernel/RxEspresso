@@ -11,16 +11,16 @@ Filling the gap between RxJava and Espresso
 1. From project root in terminal run:
 
     ```bash
-$ git submodule add git@github.com:stablekernel/RxEspresso.git
+    $ git submodule add git@github.com:stablekernel/RxEspresso.git
     ```
 
 2. Add dependency to this library module in your app module's build.gradle file:
 
     ```groovy
-dependencies {
-    ...
-	androidTestCompile project(':RxEspresso')
-}
+    dependencies {
+        ...
+	    androidTestCompile project(':RxEspresso')
+    }
     ```
 
 ## Usage
