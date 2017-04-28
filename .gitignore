@@ -1,3 +1,19 @@
 /build
 *.iml
 
+### Gradle ###
+.gradle
+build/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+
+# User-specific stuff:
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries
+.idea/vcs.xml
+.idea/runConfigurations.xml
+.idea/gradle.xml
+.idea/libraries
