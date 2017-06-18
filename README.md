@@ -5,23 +5,15 @@ Filling the gap between RxJava and Espresso
 
 ## Setup
 
+```
+compile (name: 'rxespresso-1.0', ext: 'aar')
+```
 
-#### Include source as library module
+or if you only use it in Espresso tests:
 
-1. From project root in terminal run:
-
-    ```bash
-    $ git submodule add git@github.com:stablekernel/RxEspresso.git
-    ```
-
-2. Add dependency to this library module in your app module's build.gradle file:
-
-    ```groovy
-    dependencies {
-        ...
-	    androidTestCompile project(':RxEspresso')
-    }
-    ```
+```
+androidTestCompile (name: 'rxespresso-1.0', ext: 'aar')
+```
 
 ## Usage
 

@@ -15,7 +15,7 @@
 package com.stablekernel.rxespresso;
 
 import android.support.test.espresso.Espresso;
-import android.support.test.espresso.contrib.CountingIdlingResource;
+import android.support.test.espresso.idling.CountingIdlingResource;
 
 /**
  * Wrapper around {@link CountingIdlingResource} which easily creates object and exposes increment/decrement/isIdleNow methods
